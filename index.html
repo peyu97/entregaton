@@ -75,6 +75,14 @@
             background-color: #0056b3;
         }
 
+        .delete-all-btn {
+            background-color: #ff6347;
+        }
+
+        .delete-all-btn:hover {
+            background-color: #d9534f;
+        }
+
     </style>
 </head>
 <body>
@@ -99,11 +107,6 @@
         </div>
 
         <div class="form-group">
-            <label for="rut">RUT</label>
-            <input type="text" id="rut" name="rut" required oninput="eliminarTildes(this)">
-        </div>
-
-        <div class="form-group">
             <label for="nombre">Nombre</label>
             <input type="text" id="nombre" name="nombre" required oninput="eliminarTildes(this)">
         </div>
@@ -125,6 +128,7 @@
     <div id="pacientes-list"></div>
 
     <button class="btn export-btn" onclick="exportarExcel()">Exportar a Excel</button>
+    <button class="btn delete-all-btn" onclick="eliminarTodos()">Eliminar Todos</button>
 </div>
 
 <script>
@@ -171,15 +175,13 @@
 
     function agregarPaciente() {
         const cama = document.getElementById('cama').value;
-        const rut = document.getElementById('rut').value;
         const nombre = document.getElementById('nombre').value;
         const diagnostico = document.getElementById('diagnostico').value;
         const comentarios = document.getElementById('comentarios').value;
 
-        if (cama && rut && nombre && diagnostico && comentarios) {
+        if (cama && nombre && diagnostico && comentarios) {
             const paciente = {
                 cama,
-                rut,
                 nombre,
                 diagnostico,
                 comentarios
@@ -203,7 +205,6 @@
             card.classList.add('card');
             card.innerHTML = `
                 <strong>Cama:</strong> ${paciente.cama}<br>
-                <strong>RUT:</strong> ${paciente.rut}<br>
                 <strong>Nombre:</strong> ${paciente.nombre}<br>
                 <strong>Diagnóstico:</strong> ${paciente.diagnostico}<br>
                 <strong>Comentarios:</strong> ${paciente.comentarios}<br>
@@ -223,7 +224,6 @@
     function editarPaciente(index) {
         const paciente = pacientes[index];
         document.getElementById('cama').value = paciente.cama;
-        document.getElementById('rut').value = paciente.rut;
         document.getElementById('nombre').value = paciente.nombre;
         document.getElementById('diagnostico').value = paciente.diagnostico;
         document.getElementById('comentarios').value = paciente.comentarios;
@@ -235,7 +235,6 @@
 
     function limpiarFormulario() {
         document.getElementById('cama').value = '';
-        document.getElementById('rut').value = '';
         document.getElementById('nombre').value = '';
         document.getElementById('diagnostico').value = '';
         document.getElementById('comentarios').value = '';
@@ -247,11 +246,11 @@
 
         // Titulo y encabezados
         let csvContent = `Entrega de Turno - ${fecha}\nMédicos de Turno: ${medicos}\n\n`;
-        csvContent += "Cama,RUT,Nombre,Diagnóstico,Comentarios\n";
+        csvContent += "Cama,Nombre,Diagnóstico,Comentarios\n";
 
         // Agregar los pacientes
         pacientes.forEach((paciente) => {
-            csvContent += `"${paciente.cama}","${paciente.rut}","${paciente.nombre}","${paciente.diagnostico}","${paciente.comentarios}"\n`;
+            csvContent += `"${paciente.cama}","${paciente.nombre}","${paciente.diagnostico}","${paciente.comentarios}"\n`;
         });
 
         // Crear el archivo CSV y descargarlo
@@ -260,6 +259,15 @@
         link.href = URL.createObjectURL(blob);
         link.download = `entrega_turno_${fecha}.csv`;
         link.click();
+    }
+
+    // Función para eliminar todos los pacientes
+    function eliminarTodos() {
+        if (confirm("¿Seguro que deseas eliminar todos los pacientes registrados?")) {
+            pacientes = [];
+            localStorage.removeItem('pacientes');
+            mostrarPacientes();
+        }
     }
 
     // Establecer la fecha al cargar la página
