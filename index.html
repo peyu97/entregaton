@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrega de Turno</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .card {
+            background: #f9f9f9;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .card button {
+            background: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #45a049;
+        }
+
+        .export-btn {
+            background-color: #007bff;
+        }
+
+        .export-btn:hover {
+            background-color: #0056b3;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Entrega de Turno</h2>
+    <form id="turno-form">
+        <div class="form-group">
+            <label for="fecha">Fecha</label>
+            <input type="date" id="fecha" name="fecha" required>
+        </div>
+
+        <div class="form-group">
+            <label for="medicos">Médicos de Turno</label>
+            <input type="text" id="medicos" name="medicos" placeholder="Ingresa los médicos" required>
+        </div>
+
+        <h3>Agregar Pacientes</h3>
+        <div class="form-group">
+            <label for="cama">Cama</label>
+            <input type="text" id="cama" name="cama" required oninput="eliminarTildes(this)">
+        </div>
+
+        <div class="form-group">
+            <label for="rut">RUT</label>
+            <input type="text" id="rut" name="rut" required oninput="eliminarTildes(this)">
+        </div>
+
+        <div class="form-group">
+            <label for="nombre">Nombre</label>
+            <input type="text" id="nombre" name="nombre" required oninput="eliminarTildes(this)">
+        </div>
+
+        <div class="form-group">
+            <label for="diagnostico">Diagnóstico</label>
+            <input type="text" id="diagnostico" name="diagnostico" required oninput="eliminarTildes(this)">
+        </div>
+
+        <div class="form-group">
+            <label for="comentarios">Comentarios</label>
+            <textarea id="comentarios" name="comentarios" rows="4" required oninput="eliminarTildes(this)"></textarea>
+        </div>
+
+        <button type="button" class="btn" onclick="agregarPaciente()">Agregar Paciente</button>
+    </form>
+
+    <h3>Pacientes Registrados</h3>
+    <div id="pacientes-list"></div>
+
+    <button class="btn export-btn" onclick="exportarExcel()">Exportar a Excel</button>
+</div>
+
+<script>
+    let pacientes = [];
+
+    // Función para eliminar tildes de una cadena de texto
+    function eliminarTildes(element) {
+        const tildes = {
+            'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 
+            'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U',
+            'ñ': 'n', 'Ñ': 'N'
+        };
+
+        let texto = element.value;
+        for (let letra in tildes) {
+            texto = texto.replace(new RegExp(letra, 'g'), tildes[letra]);
+        }
+        element.value = texto;
+    }
+
+    // Función para establecer la fecha de hoy automáticamente
+    function establecerFechaHoy() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Mes comienza en 0
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayDate = `${year}-${month}-${day}`;
+        document.getElementById('fecha').value = todayDate;
+    }
+
+    function agregarPaciente() {
+        const cama = document.getElementById('cama').value;
+        const rut = document.getElementById('rut').value;
+        const nombre = document.getElementById('nombre').value;
+        const diagnostico = document.getElementById('diagnostico').value;
+        const comentarios = document.getElementById('comentarios').value;
+
+        if (cama && rut && nombre && diagnostico && comentarios) {
+            const paciente = {
+                cama,
+                rut,
+                nombre,
+                diagnostico,
+                comentarios
+            };
+
+            pacientes.push(paciente);
+            mostrarPacientes();
+            limpiarFormulario();
+        } else {
+            alert("Por favor, complete todos los campos.");
+        }
+    }
+
+    function mostrarPacientes() {
+        const lista = document.getElementById('pacientes-list');
+        lista.innerHTML = '';
+
+        pacientes.forEach((paciente, index) => {
+            const card = document.createElement('div');
+            card.classList.add('card');
+            card.innerHTML = `
+                <strong>Cama:</strong> ${paciente.cama}<br>
+                <strong>RUT:</strong> ${paciente.rut}<br>
+                <strong>Nombre:</strong> ${paciente.nombre}<br>
+                <strong>Diagnóstico:</strong> ${paciente.diagnostico}<br>
+                <strong>Comentarios:</strong> ${paciente.comentarios}<br>
+                <button onclick="eliminarPaciente(${index})">Eliminar</button>
+                <button onclick="editarPaciente(${index})">Editar</button>
+            `;
+            lista.appendChild(card);
+        });
+    }
+
+    function eliminarPaciente(index) {
+        pacientes.splice(index, 1);
+        mostrarPacientes();
+    }
+
+    function editarPaciente(index) {
+        const paciente = pacientes[index];
+        document.getElementById('cama').value = paciente.cama;
+        document.getElementById('rut').value = paciente.rut;
+        document.getElementById('nombre').value = paciente.nombre;
+        document.getElementById('diagnostico').value = paciente.diagnostico;
+        document.getElementById('comentarios').value = paciente.comentarios;
+
+        pacientes.splice(index, 1);
+        mostrarPacientes();
+    }
+
+    function limpiarFormulario() {
+        document.getElementById('cama').value = '';
+        document.getElementById('rut').value = '';
+        document.getElementById('nombre').value = '';
+        document.getElementById('diagnostico').value = '';
+        document.getElementById('comentarios').value = '';
+    }
+
+    function exportarExcel() {
+        const fecha = document.getElementById('fecha').value;
+        const medicos = document.getElementById('medicos').value;
+
+        // Titulo y encabezados
+        let csvContent = `Entrega de Turno - ${fecha}\nMedicos de Turno: ${medicos}\n\n`;
+        csvContent += "Cama,RUT,Nombre,Diagnostico,Comentarios\n";
+
+        // Agregar los pacientes
+        pacientes.forEach((paciente) => {
+            csvContent += `"${paciente.cama}","${paciente.rut}","${paciente.nombre}","${paciente.diagnostico}","${paciente.comentarios}"\n`;
+        });
+
+        // Crear el archivo CSV y descargarlo
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `entrega_turno_${fecha}.csv`;
+        link.click();
+    }
+
+    // Establecer la fecha al cargar la página
+    window.onload = establecerFechaHoy;
+
+</script>
+
+</body>
+</html>
