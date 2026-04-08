@@ -28,13 +28,27 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
+        .card-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
         .card button {
-            background: red;
             color: white;
             border: none;
-            padding: 5px 10px;
+            padding: 6px 12px;
             border-radius: 5px;
             cursor: pointer;
+        }
+
+        .btn-eliminar {
+            background: red;
+        }
+
+        .btn-editar {
+            background: #ff9800;
         }
 
         .form-group {
@@ -46,12 +60,13 @@
             margin-bottom: 5px;
         }
 
-        input, textarea {
+        input, textarea, select {
             width: 100%;
             padding: 8px;
             margin-bottom: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
+            box-sizing: border-box;
         }
 
         .btn {
@@ -74,15 +89,6 @@
         .export-btn:hover {
             background-color: #0056b3;
         }
-
-        .delete-all-btn {
-            background-color: #ff6347;
-        }
-
-        .delete-all-btn:hover {
-            background-color: #d9534f;
-        }
-
     </style>
 </head>
 <body>
@@ -101,9 +107,27 @@
         </div>
 
         <h3>Agregar Pacientes</h3>
+
+        <div class="form-group">
+            <label for="servicio">Servicio</label>
+            <select id="servicio" name="servicio" required>
+                <option value="">Seleccione un servicio</option>
+                <option value="MQ1">MQ1</option>
+                <option value="MQ2">MQ2</option>
+                <option value="aislamiento">aislamiento</option>
+                <option value="ginecología">ginecología</option>
+                <option value="pediatria">pediatria</option>
+            </select>
+        </div>
+
         <div class="form-group">
             <label for="cama">Cama</label>
             <input type="text" id="cama" name="cama" required oninput="eliminarTildes(this)">
+        </div>
+
+        <div class="form-group">
+            <label for="rut">RUT</label>
+            <input type="text" id="rut" name="rut" required oninput="eliminarTildes(this)">
         </div>
 
         <div class="form-group">
@@ -128,16 +152,14 @@
     <div id="pacientes-list"></div>
 
     <button class="btn export-btn" onclick="exportarExcel()">Exportar a Excel</button>
-    <button class="btn delete-all-btn" onclick="eliminarTodos()">Eliminar Todos</button>
 </div>
 
 <script>
     let pacientes = [];
 
-    // Función para eliminar tildes de una cadena de texto
     function eliminarTildes(element) {
         const tildes = {
-            'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 
+            'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u',
             'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U',
             'ñ': 'n', 'Ñ': 'N'
         };
@@ -149,46 +171,40 @@
         element.value = texto;
     }
 
-    // Función para establecer la fecha de hoy automáticamente
     function establecerFechaHoy() {
         const today = new Date();
         const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0'); // Mes comienza en 0
+        const month = String(today.getMonth() + 1).padStart(2, '0');
         const day = String(today.getDate()).padStart(2, '0');
         const todayDate = `${year}-${month}-${day}`;
         document.getElementById('fecha').value = todayDate;
     }
 
-    // Función para cargar los pacientes desde el localStorage
-    function cargarPacientes() {
-        const pacientesStorage = localStorage.getItem('pacientes');
-        if (pacientesStorage) {
-            pacientes = JSON.parse(pacientesStorage);
-            mostrarPacientes();
-        }
-    }
-
-    // Función para guardar los pacientes en el localStorage
-    function guardarPacientes() {
-        localStorage.setItem('pacientes', JSON.stringify(pacientes));
+    function formatearFechaDDMMAA(fechaISO) {
+        if (!fechaISO) return '';
+        const [year, month, day] = fechaISO.split('-');
+        return `${day}-${month}-${year.slice(-2)}`;
     }
 
     function agregarPaciente() {
+        const servicio = document.getElementById('servicio').value;
         const cama = document.getElementById('cama').value;
+        const rut = document.getElementById('rut').value;
         const nombre = document.getElementById('nombre').value;
         const diagnostico = document.getElementById('diagnostico').value;
         const comentarios = document.getElementById('comentarios').value;
 
-        if (cama && nombre && diagnostico && comentarios) {
+        if (servicio && cama && rut && nombre && diagnostico && comentarios) {
             const paciente = {
+                servicio,
                 cama,
+                rut,
                 nombre,
                 diagnostico,
                 comentarios
             };
 
             pacientes.push(paciente);
-            guardarPacientes(); // Guardamos los datos en localStorage
             mostrarPacientes();
             limpiarFormulario();
         } else {
@@ -204,12 +220,16 @@
             const card = document.createElement('div');
             card.classList.add('card');
             card.innerHTML = `
+                <strong>Servicio:</strong> ${paciente.servicio}<br>
                 <strong>Cama:</strong> ${paciente.cama}<br>
+                <strong>RUT:</strong> ${paciente.rut}<br>
                 <strong>Nombre:</strong> ${paciente.nombre}<br>
                 <strong>Diagnóstico:</strong> ${paciente.diagnostico}<br>
                 <strong>Comentarios:</strong> ${paciente.comentarios}<br>
-                <button onclick="eliminarPaciente(${index})">Eliminar</button>
-                <button onclick="editarPaciente(${index})">Editar</button>
+                <div class="card-actions">
+                    <button class="btn-eliminar" onclick="eliminarPaciente(${index})">Eliminar</button>
+                    <button class="btn-editar" onclick="editarPaciente(${index})">Editar</button>
+                </div>
             `;
             lista.appendChild(card);
         });
@@ -217,66 +237,65 @@
 
     function eliminarPaciente(index) {
         pacientes.splice(index, 1);
-        guardarPacientes(); // Guardamos los cambios en localStorage
         mostrarPacientes();
     }
 
     function editarPaciente(index) {
         const paciente = pacientes[index];
+        document.getElementById('servicio').value = paciente.servicio;
         document.getElementById('cama').value = paciente.cama;
+        document.getElementById('rut').value = paciente.rut;
         document.getElementById('nombre').value = paciente.nombre;
         document.getElementById('diagnostico').value = paciente.diagnostico;
         document.getElementById('comentarios').value = paciente.comentarios;
 
         pacientes.splice(index, 1);
-        guardarPacientes(); // Guardamos los cambios en localStorage
         mostrarPacientes();
     }
 
     function limpiarFormulario() {
+        document.getElementById('servicio').value = '';
         document.getElementById('cama').value = '';
+        document.getElementById('rut').value = '';
         document.getElementById('nombre').value = '';
         document.getElementById('diagnostico').value = '';
         document.getElementById('comentarios').value = '';
     }
 
+    function escaparCSV(valor) {
+        return `"${String(valor).replace(/"/g, '""')}"`;
+    }
+
     function exportarExcel() {
-        const fecha = document.getElementById('fecha').value;
+        const fechaISO = document.getElementById('fecha').value;
+        const fechaFormateada = formatearFechaDDMMAA(fechaISO);
         const medicos = document.getElementById('medicos').value;
 
-        // Titulo y encabezados
-        let csvContent = `Entrega de Turno - ${fecha}\nMédicos de Turno: ${medicos}\n\n`;
-        csvContent += "Cama,Nombre,Diagnóstico,Comentarios\n";
+        let csvContent = `Entrega de Turno - ${fechaFormateada}\nMédicos de Turno: ${medicos}\n\n`;
+        csvContent += "Servicio,Cama,RUT,Nombre,Diagnostico,Comentarios\n";
 
-        // Agregar los pacientes
         pacientes.forEach((paciente) => {
-            csvContent += `"${paciente.cama}","${paciente.nombre}","${paciente.diagnostico}","${paciente.comentarios}"\n`;
+            csvContent += [
+                escaparCSV(paciente.servicio),
+                escaparCSV(paciente.cama),
+                escaparCSV(paciente.rut),
+                escaparCSV(paciente.nombre),
+                escaparCSV(paciente.diagnostico),
+                escaparCSV(paciente.comentarios)
+            ].join(',') + "\n";
         });
 
-        // Crear el archivo CSV y descargarlo
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `entrega_turno_${fecha}.csv`;
+        link.download = `entrega_turno_${fechaFormateada}.csv`;
         link.click();
     }
 
-    // Función para eliminar todos los pacientes
-    function eliminarTodos() {
-        if (confirm("¿Seguro que deseas eliminar todos los pacientes registrados?")) {
-            pacientes = [];
-            localStorage.removeItem('pacientes');
-            mostrarPacientes();
-        }
-    }
-
-    // Establecer la fecha al cargar la página
-    window.onload = function() {
-        establecerFechaHoy();
-        cargarPacientes(); // Cargar pacientes desde localStorage
-    }
-
+    window.onload = establecerFechaHoy;
 </script>
 
+</body>
+</html>
 </body>
 </html>
