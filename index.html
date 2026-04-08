@@ -38,7 +38,7 @@
         .card button {
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 5px;
             cursor: pointer;
         }
@@ -89,6 +89,14 @@
         .export-btn:hover {
             background-color: #0056b3;
         }
+
+        .delete-all-btn {
+            background-color: #ff6347;
+        }
+
+        .delete-all-btn:hover {
+            background-color: #d9534f;
+        }
     </style>
 </head>
 <body>
@@ -126,11 +134,6 @@
         </div>
 
         <div class="form-group">
-            <label for="rut">RUT</label>
-            <input type="text" id="rut" name="rut" required oninput="eliminarTildes(this)">
-        </div>
-
-        <div class="form-group">
             <label for="nombre">Nombre</label>
             <input type="text" id="nombre" name="nombre" required oninput="eliminarTildes(this)">
         </div>
@@ -152,6 +155,7 @@
     <div id="pacientes-list"></div>
 
     <button class="btn export-btn" onclick="exportarExcel()">Exportar a Excel</button>
+    <button class="btn delete-all-btn" onclick="eliminarTodos()">Eliminar Todos</button>
 </div>
 
 <script>
@@ -186,25 +190,36 @@
         return `${day}-${month}-${year.slice(-2)}`;
     }
 
+    function cargarPacientes() {
+        const pacientesStorage = localStorage.getItem('pacientes');
+        if (pacientesStorage) {
+            pacientes = JSON.parse(pacientesStorage);
+            mostrarPacientes();
+        }
+    }
+
+    function guardarPacientes() {
+        localStorage.setItem('pacientes', JSON.stringify(pacientes));
+    }
+
     function agregarPaciente() {
         const servicio = document.getElementById('servicio').value;
         const cama = document.getElementById('cama').value;
-        const rut = document.getElementById('rut').value;
         const nombre = document.getElementById('nombre').value;
         const diagnostico = document.getElementById('diagnostico').value;
         const comentarios = document.getElementById('comentarios').value;
 
-        if (servicio && cama && rut && nombre && diagnostico && comentarios) {
+        if (servicio && cama && nombre && diagnostico && comentarios) {
             const paciente = {
                 servicio,
                 cama,
-                rut,
                 nombre,
                 diagnostico,
                 comentarios
             };
 
             pacientes.push(paciente);
+            guardarPacientes();
             mostrarPacientes();
             limpiarFormulario();
         } else {
@@ -222,7 +237,6 @@
             card.innerHTML = `
                 <strong>Servicio:</strong> ${paciente.servicio}<br>
                 <strong>Cama:</strong> ${paciente.cama}<br>
-                <strong>RUT:</strong> ${paciente.rut}<br>
                 <strong>Nombre:</strong> ${paciente.nombre}<br>
                 <strong>Diagnóstico:</strong> ${paciente.diagnostico}<br>
                 <strong>Comentarios:</strong> ${paciente.comentarios}<br>
@@ -237,6 +251,7 @@
 
     function eliminarPaciente(index) {
         pacientes.splice(index, 1);
+        guardarPacientes();
         mostrarPacientes();
     }
 
@@ -244,19 +259,18 @@
         const paciente = pacientes[index];
         document.getElementById('servicio').value = paciente.servicio;
         document.getElementById('cama').value = paciente.cama;
-        document.getElementById('rut').value = paciente.rut;
         document.getElementById('nombre').value = paciente.nombre;
         document.getElementById('diagnostico').value = paciente.diagnostico;
         document.getElementById('comentarios').value = paciente.comentarios;
 
         pacientes.splice(index, 1);
+        guardarPacientes();
         mostrarPacientes();
     }
 
     function limpiarFormulario() {
         document.getElementById('servicio').value = '';
         document.getElementById('cama').value = '';
-        document.getElementById('rut').value = '';
         document.getElementById('nombre').value = '';
         document.getElementById('diagnostico').value = '';
         document.getElementById('comentarios').value = '';
@@ -272,13 +286,12 @@
         const medicos = document.getElementById('medicos').value;
 
         let csvContent = `Entrega de Turno - ${fechaFormateada}\nMédicos de Turno: ${medicos}\n\n`;
-        csvContent += "Servicio,Cama,RUT,Nombre,Diagnostico,Comentarios\n";
+        csvContent += "Servicio,Cama,Nombre,Diagnóstico,Comentarios\n";
 
         pacientes.forEach((paciente) => {
             csvContent += [
                 escaparCSV(paciente.servicio),
                 escaparCSV(paciente.cama),
-                escaparCSV(paciente.rut),
                 escaparCSV(paciente.nombre),
                 escaparCSV(paciente.diagnostico),
                 escaparCSV(paciente.comentarios)
@@ -292,10 +305,19 @@
         link.click();
     }
 
-    window.onload = establecerFechaHoy;
+    function eliminarTodos() {
+        if (confirm("¿Seguro que deseas eliminar todos los pacientes registrados?")) {
+            pacientes = [];
+            localStorage.removeItem('pacientes');
+            mostrarPacientes();
+        }
+    }
+
+    window.onload = function() {
+        establecerFechaHoy();
+        cargarPacientes();
+    }
 </script>
 
-</body>
-</html>
 </body>
 </html>
